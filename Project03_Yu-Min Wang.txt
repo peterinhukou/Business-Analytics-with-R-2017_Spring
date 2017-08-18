@@ -1,0 +1,86 @@
+##### Segment 1 ################
+
+myDir<-"C:/data/BUAN6356"
+myData<-"Boston.csv"
+setwd(myDir)
+regData<-read.csv(myData)
+set.seed(385766359)	
+u01	<- runif(length(regData$medv))
+
+train_pc	<-	.90		
+test_pc		<-	1-train_pc
+
+rank			<-	order(u01)
+n_test_pc		<-	floor(test_pc * length(u01))		# how many in testing sample?
+sample_test_pc		<-	rank[1:n_test_pc]			# indexes for testing sample
+reg_Test		<-	regData[ sample_test_pc, ]		# testing set
+sample_train_pc		<-	rank[(n_test_pc+1):length(u01)]		# indexes for remaining rows
+reg_Train		<-	regData[sample_train_pc, ]		# training set
+length(reg_Train$medv)
+
+##delete id
+modelTrain <- lm(medv ~ .-id , data=reg_Train)
+summary(modelTrain)
+
+##delete age which is not significant
+modelTrain <- lm(medv ~ .-id-age , data=reg_Train)
+summary(modelTrain)
+
+##delete indus which is not significant
+modelTrain <- lm(medv ~ .-id-age-indus , data=reg_Train)
+summary(modelTrain)
+
+#Train data : fitted and residuals
+housingTrain <- reg_Train
+housingTrain$olsFit<-predict(modelTrain,reg_Train)
+housingTrain$olsResid <- housingTrain$medv - housingTrain$olsFit
+
+#Test data predict and residuals
+housingTest <- reg_Test
+housingTest$olsFit <- predict(modelTrain, reg_Test)
+housingTest$olsResid <- housingTest$medv - housingTest$olsFit
+ 
+
+##### Segment 2  ################
+
+require(rpart)
+rpartTrain  <- rpart(medv~.-id,data=reg_Train,method="anova")
+plot(rpartTrain, uniform=TRUE,main="Regression Tree (rpart)")
+text(rpartTrain, use.n=TRUE, cex=0.8)
+
+require(tree)
+treeTrain <- tree(medv~.-id,data=reg_Train)
+plot(treeTrain)
+text(treeTrain)
+
+## rpart : predict and Resid 
+# housingTrain 
+housingTrain$rpartFit	<-	predict(rpartTrain,reg_Train)
+housingTrain$rpartResid <- housingTrain$medv - housingTrain$rpartFit
+# housingTest 
+housingTest$rpartFit<-predict(rpartTrain,reg_Test)
+housingTest$rpartResid <- housingTest$medv - housingTest$rpartFit
+
+## tree : predict and Resid
+# housingTrain 
+housingTrain$treeFit	<-	predict(treeTrain,reg_Train)
+housingTrain$treeResid <- housingTrain$medv - housingTrain$treeFit
+# housingTest
+housingTest$treeFit<-predict(treeTrain,reg_Test)
+housingTest$treeResid <- housingTest$medv - housingTest$treeFit
+
+
+##### Segment 3  ################
+
+eTrain <- lm(medv~olsFit+rpartFit+treeFit, data=housingTrain)
+summary(eTrain)
+
+### delete rpartFit which is not significant ###
+eTrain <- lm(medv~olsFit+treeFit, data=housingTrain)
+summary(eTrain)
+
+housingTrain$eFit <- predict(eTrain, housingTrain)
+housingTrain$eResid <- housingTrain$medv - housingTrain$eFit
+
+housingTest$eFit <- predict(eTrain, housingTest)
+housingTest$eResid <- housingTest$medv - housingTest$eFit

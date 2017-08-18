@@ -1,0 +1,8 @@
+myDir<-"C:/data/BUAN6356"
+myData<-"movie_data.csv"
+setwd(myDir)
+mData<-read.csv(myData)
+m1Data <- subset(mData,budget>=0 & gross >=0,c("gross", "imdb_score", "color", "duration"))
+m2Data <- subset(m1Data, m1Data$color=="Color" | m1Data$color==" Black and White",)
+m2Data_lm <- lm(gross~., data=m2Data)
+summary(m2Data_lm)

@@ -1,0 +1,42 @@
+myDir<-"C:/data/BUAN6356"
+myData<-"02_movie_data_subset.Rimage"
+setwd(myDir)
+load(myData)
+ls()
+str(mDataSubset)
+
+# make a copy 
+myDataSubset <- mDataSubset
+
+# delete all factor variables other than "color"
+myDataSubset$movie_title<-NULL
+myDataSubset$movie_imdb_link<-NULL
+myDataSubset$language<-NULL
+myDataSubset$country<-NULL
+myDataSubset$content_rating<-NULL
+
+# regression with all numerical variables plus color to get modelAll
+modelAll <- lm(gross~., data=myDataSubset)
+summary(modelAll)
+
+# remove variable "num_user_for_reviews" 
+myDataSubset$num_user_for_reviews <- NULL
+modelFinal <- lm(gross~., data=myDataSubset)
+summary(modelFinal)
+
+# remove variable "durable"
+myDataSubset$duration <- NULL
+modelFinal<- lm(gross~., data=myDataSubset)
+summary(modelFinal)
+
+# remove variable "aspect_ratio" to get modelFinal
+myDataSubset$aspect_ratio <- NULL
+modelFinal<- lm(gross~., data=myDataSubset)
+summary(modelFinal)
+
+# add variable "profitable" to mDataSubset
+attach(mDataSubset)
+mDataSubset$profitable <- ifelse(gross-budget>0, 1, 0) 
+detach(mDataSubset)
+
+
